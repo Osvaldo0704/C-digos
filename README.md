@@ -21,6 +21,20 @@ CSS (feito manualmente, sem frameworks como Bootstrap)
 
 O código foi implementado levando em consideração a proposta da atividade, com pesquisas e consultas para aprimoramento.
 
+Como Executar
+
+Clone este repositório:
+git clone https://github.com/Osvaldo0704/C-digos.git
+
+Navegue até a pasta do inventário:
+cd C-digos/inventario
+
+Certifique-se de que possui um servidor local (como XAMPP ou WAMP) configurado para rodar PHP.
+Coloque os arquivos no diretório correto do servidor (htdocs para XAMPP, por exemplo).
+
+Acesse o sistema via navegador:
+http://localhost/inventario
+
 Autor
 
 Osvaldo Antônio A. Ribeiro
