@@ -71,33 +71,58 @@
 <body>
 <?php
 session_start();
-$arquivo = 'itens.txt';
+
+// Dados da conexão (ajuste conforme necessário)
+$host = "localhost";
+$usuario = "root";
+$senha = "";
+$banco = "inventario";
+
+// Conectar ao banco
+$conn = new mysqli($host, $usuario, $senha, $banco);
+
+// Verifica conexão
+if ($conn->connect_error) {
+    die("Erro na conexão com o banco de dados: " . $conn->connect_error);
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nome = trim($_POST['nome']);
+    $descricao = trim($_POST['descricao']);
     $quantidade = (int)trim($_POST['quantidade']);
     $imagem = trim($_POST['imagem']);
 
-    if (!empty($nome) && $quantidade > 0 && !empty($imagem)) {
-        $itens = [];
-        if (file_exists($arquivo)) {
-            $linhas = file($arquivo, FILE_IGNORE_NEW_LINES);
-            foreach ($linhas as $linha) {
-                list($nomeItem, $quantidadeItem, $imagemItem) = explode('|', $linha);
-                if ($nomeItem === $nome) {
-                    $quantidade += (int)$quantidadeItem; // Soma a quantidade existente
-                } else {
-                    $itens[] = "$nomeItem|$quantidadeItem|$imagemItem";
-                }
-            }
+    if (!empty($nome) && !empty($descricao) && $quantidade > 0 && !empty($imagem)) {
+        // Verifica se item já existe
+        $stmt = $conn->prepare("SELECT ID, qtd_item FROM item WHERE nome_item = ?");
+        $stmt->bind_param("s", $nome);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        if ($resultado->num_rows > 0) {
+            // Atualiza quantidade se item já existir
+            $linha = $resultado->fetch_assoc();
+            $novaQuantidade = $linha['qtd_item'] + $quantidade;
+
+            $stmt = $conn->prepare("UPDATE item SET qtd_item = ?, descricao_item = ?, img_item = ? WHERE ID = ?");
+            $stmt->bind_param("issi", $novaQuantidade, $descricao, $imagem, $linha['ID']);
+            $stmt->execute();
+
+            $mensagem = "Quantidade atualizada com sucesso!";
+        } else {
+            // Insere novo item
+            $stmt = $conn->prepare("INSERT INTO item (nome_item, qtd_item, descricao_item, img_item) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("siss", $nome, $quantidade, $descricao, $imagem);
+            $stmt->execute();
+
+            $mensagem = "Item cadastrado com sucesso!";
         }
-        
-        $itens[] = "$nome|$quantidade|$imagem";
-        file_put_contents($arquivo, implode("\n", $itens) . "\n");
-        $mensagem = "Item cadastrado com sucesso!";
+        $stmt->close();
     } else {
         $mensagem = "Preencha todos os campos corretamente.";
     }
+
+    $conn->close();
 }
 ?>
     <div class="navbar">
@@ -115,6 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div>
                     <label for="nome" class="form-label"></label>
                     <input type="text" placeholder="Nome do Item:" class="form-control" id="nome" name="nome" required>
+                </div>
+                <div>
+                    <label for="descricao" class="form-label"></label>
+                    <input type="text" placeholder="Descrição do Item:" class="form-control" id="descricao" name="descricao" required>
                 </div>
                 <div>
                     <label for="quantidade" class="form-label"></label>
